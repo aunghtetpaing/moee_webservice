@@ -43,7 +43,7 @@ async updateOne(@Body() updateUserInfo: UpdateUserDto): Promise<any> {
 }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @hasRoles(UserRoles.USER)
+  @hasRoles(UserRoles.ADMIN)
   @Get()
   async getAllUser(@Query() filter?: userFilterDto): Promise<any> {
     let responseResult: any = {};
@@ -60,7 +60,7 @@ async updateOne(@Body() updateUserInfo: UpdateUserDto): Promise<any> {
 
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @hasRoles(UserRoles.USER)
+  @hasRoles(UserRoles.USER, UserRoles.ADMIN)
   @Get('/:email')
   async getUser(@Param('email') email: string): Promise<any> {
     let responseResult: any = {};
