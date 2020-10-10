@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Param, Query, Delete, Put } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Param, Query, Delete, Put, BadRequestException, HttpStatus } from '@nestjs/common';
 
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -12,24 +12,39 @@ import { CreateUserDto, userFilterDto, DeleteUserDto, UpdateUserDto } from '../.
 import { hasRoles } from '../../dtos/roles.dto';
 
 import { UserService } from './user.service';
+import { BadRequestResponse, SuccessResponse } from 'src/interface/response.interface';
 
 @Controller('users')
 export class UserController {
+
+  badResponse: BadRequestResponse = {
+    responseCode: HttpStatus.BAD_REQUEST,
+    errorCode: '',
+    status: 'Failed',
+    description: false
+  }
 
   constructor(
     private readonly userService: UserService
   ) { }
 
 @Post()
-async createUser(@Body() requestUser: CreateUserDto): Promise<any> {
-  const getUser: UserEntity = await this.userService.create(requestUser);
-
-  if(getUser) {
-    const { verifycode_ , ...userInfo } = getUser;
-    return httpResponseException('000', 'new user is successfully created!', sortObject({ ...userInfo, ...verifycode_ }));
+async createUser(@Body() requestUser: CreateUserDto): Promise<SuccessResponse> {
+  
+  if(!Number(requestUser.phoneNumber)) {
+    this.badResponse.description = 'incorrect phone number format';
+    this.badResponse.errorCode = 'ddd';
+    throw new BadRequestException(this.badResponse)
   }
+  // const getUser: UserEntity = await this.userService.create(requestUser);
 
-  return httpResponseException('055','services not found');
+  // if(getUser) {
+  //   const { verifycode_ , ...userInfo } = getUser;
+  //   return httpResponseException('000', 'new user is successfully created!', sortObject({ ...userInfo, ...verifycode_ }));
+  // }
+
+  // return httpResponseException('055','services not found');
+  return;
 }
 
 // @UseGuards(JwtAuthGuard, RolesGuard)
