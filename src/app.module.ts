@@ -12,7 +12,7 @@ import { VerifyCodeModule } from './cores/verifyCode/verifycode.module';
       type: "mysql",
       host: "localhost",
       port: 3306,
-      username: "ahp",
+      username: "root",
       password: "Welcomeinno$10000",
       database: "moee",
       autoLoadEntities: true,
