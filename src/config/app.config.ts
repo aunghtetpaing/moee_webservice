@@ -2,9 +2,9 @@ import { App, AppEnv } from "src/interface/app.interface";
 
 export const AppConfig: App = {
     prefix: 'api',
-    baseUrl: 'http://localhost',
-    port: 9090,
+    baseUrl: 'https://moeeapi.innoscript.co',
+    port: 8080,
     version: 1.0,
-    env: AppEnv.LOCAL,
+    env: AppEnv.PROD,
     secret: 'Welcomeinno$10000'
 }
