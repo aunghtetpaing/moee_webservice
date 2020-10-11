@@ -1,25 +1,27 @@
-import { App, AppEnv } from "src/interface/app.interface";
-
-const environment = AppEnv.LOCAL;
-
-const baseUrl: string[] = [
-    'http://localhost',
-    'https://moeeapi.innoscript.co',
-    'https://dev.api.moee.com',
-    'https://api.moee.com'
-];
-
-const default_port: number = 8080;
-const ports: number[] = [];
-
-const accept_secret_key: string[] = ['welcomeinno$100000'];
+import { App } from "src/interface/app.interface";
+import { isDefault } from '../utilites/config.utilites';
+import { 
+    accept_secret_key, 
+    baseUrl, 
+    environment, 
+    ports, 
+    prefix, 
+    app_version, 
+    secret, 
+    default_port, 
+    default_prefix, 
+    default_baseUrl,
+    default_accept_secret_key,
+    default_secret,
+    default_app_version
+} from './configuration';
 
 export const AppConfig: App = {
     env: environment,
-    prefix: 'api',
-    baseUrl: baseUrl[environment],
-    port: ports.length === 0 ? default_port : ports[environment],
-    accept_secret_key: accept_secret_key[environment],
-    version: '2',
-    secret: 'Welcomeinno$10000'
+    prefix: isDefault(prefix) ? default_prefix : prefix[environment],
+    version: isDefault(app_version) ? default_app_version : app_version[environment],
+    baseUrl: isDefault(baseUrl) ? default_baseUrl : baseUrl[environment],
+    port: isDefault(ports) ? default_port : ports[environment],
+    accept_secret_key: isDefault(accept_secret_key) ? default_accept_secret_key : accept_secret_key[environment],
+    secret: isDefault(secret) ? default_secret : secret[environment]
 }

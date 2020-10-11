@@ -2,9 +2,14 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
 import { AppConfig } from './config/app.config';
+
 import { GlobalExpectionFilter } from './config/globalExpectionFilter';
-import { GlobalGuards } from './config/globalGuards';
 import { GlobalValidationPipe } from './config/globalValidation.pipe';
+
+import { AppLogger } from './services/logger.service';
+import { isEnv } from './utilites/config.utilites';
+
+const appStatus = isEnv(AppConfig);
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,9 +18,14 @@ async function bootstrap() {
   
   app.useGlobalPipes(new GlobalValidationPipe());
   app.useGlobalFilters(new GlobalExpectionFilter());
-  app.useGlobalGuards(new GlobalGuards());
 
+  app.useLogger(app.get(AppLogger));
+  
   await app.listen(AppConfig.port);
 }
 
-bootstrap();
+if(!appStatus.includes(true)) {
+  bootstrap();
+}
+
+
