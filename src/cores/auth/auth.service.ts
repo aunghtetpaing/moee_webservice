@@ -8,7 +8,6 @@ import { UserEntity } from '../../entities/user.entity';
 import { httpResponseException } from 'src/utilites';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { TokenEntity } from 'src/entities/token.entity';
 import { Repository } from 'typeorm';
 import { LoginType } from 'src/interface/auth.interface';
 
@@ -16,30 +15,9 @@ import { LoginType } from 'src/interface/auth.interface';
 export class AuthService {
 
     constructor(
-        @InjectRepository(TokenEntity) private tokenRepo: Repository<TokenEntity>,
         private userService: UserService,
         private jwtService: JwtService,
     ) { }
-
-    private async getToken(uuid: string): Promise<any> {
-        const isToken = await this.tokenRepo.count({uuid});
-
-        if(isToken === 0)
-        return LoginType.FIRST_TIME_LOGIN
-
-        if(isToken > 0)
-        return LoginType.NORMAL_LOGIN;
-    }
-
-    private async addToken(authToken: AuthTokenDto): Promise<any> {
-        const createAuthToken = this.tokenRepo.create(authToken);
-
-        try {
-            return await this.tokenRepo.save(createAuthToken);
-        } catch(error) {
-            return httpResponseException('004', 'Can not Login.')
-        }
-    }
 
     async useLogin(authCreditentialsDto: AuthCreditentialsDto): Promise<any> {
         const {email, password } = authCreditentialsDto;
@@ -63,17 +41,15 @@ export class AuthService {
             active: getUser.active,
         });
 
-        const loginType = await this.getToken(result.uuid);
         const authTokenObject: AuthTokenDto = {
             uuid: result.uuid,
             token: accessToken,
         }
 
-        this.addToken(authTokenObject);
 
         delete result.password;
         delete verifycode_.code;
 
-        return {...result, ...verifycode_, loginType, accessToken }
+        return {...result, ...verifycode_, accessToken }
     }
 }

@@ -4,17 +4,13 @@ import { plainToClass } from 'class-transformer';
 
 import { BadRequestResponse } from '../interface/response.interface';
 
+import { response, Response } from 'express';
+
 @Injectable()
 export class GlobalValidationPipe implements PipeTransform<any> {
 
-  responseObject: BadRequestResponse = {
-    responseCode: HttpStatus.BAD_REQUEST,
-    errorCode: '',
-    status: 'Failed',
-    description: false
-  };
-
-  constructor(){}
+  res: Response = response;
+  constructor(){ }
 
   async transform(value: any, { metatype }: ArgumentMetadata) {
 
@@ -28,11 +24,13 @@ export class GlobalValidationPipe implements PipeTransform<any> {
     if (errors.length > 0) {
 
       Object.values(errors[0].constraints).map((keys) => {
-        this.responseObject.description = keys;
       });
 
-      this.responseObject.errorCode = 'USR002';
-      throw new BadRequestException(this.responseObject);
+      // this.responseObject.errorCode = 'USR002';
+      // throw new BadRequestException(this.responseObject);
+      this.res.status(HttpStatus.BAD_REQUEST).json({
+        data: 'dfdf'
+      });
     }
 
     return value;

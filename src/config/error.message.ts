@@ -18,11 +18,28 @@ export const app_level = {
 
     APPLANG001: {
         code: 'APPLANG001',
-        message: "App doesn't support language"
+        message: "Invalid language"
     },
 
     APPSUPPORT001: {
         code: 'APPSUPPORT001',
-        message: "Incorrect app support"
+        message: "Doesn't match api version"
+    },
+
+    APPSUPPORT002: {
+        code: 'APPSUPPORT002',
+        message: "Doesn't support app platform"
+    },
+
+    APPSUPPORT003: {
+        code: 'APPSUPPORT003',
+        message: "Doesn't match environment"
+    }
+}
+
+export const usrInfoErr = {
+    USRINFO001: {
+        code: 'USRINFO001',
+        message: 'Invalid phone number format'
     }
 }

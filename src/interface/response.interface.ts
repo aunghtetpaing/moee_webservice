@@ -47,3 +47,11 @@ export interface UnprocessableRequestResponse {
     description: string | false;
     header?: any;
 }
+
+export interface HttpResponseInterface {
+    responseCode: HttpStatus;
+    errorCode: string | false;
+    description: string | false;
+    data?: any;
+    payload?: any;
+}

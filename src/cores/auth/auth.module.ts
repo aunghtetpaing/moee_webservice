@@ -9,18 +9,16 @@ import { AuthContoller } from "./auth.controller";
 import { UserModule } from '../users/user.module';
 import { AppConfig } from "src/config/app.config";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { TokenEntity } from "src/entities/token.entity";
 
 @Module({
     imports: [ 
         UserModule,
-        TypeOrmModule.forFeature([TokenEntity]),
         PassportModule.register({ 
             defaultStrategy: 'jwt',
             session: true,
         }),
         JwtModule.register({
-            secret: AppConfig.secret,
+            secret: AppConfig.jwtSecret,
             signOptions: { expiresIn: 3600 }
         })
     ],

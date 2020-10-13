@@ -1,4 +1,5 @@
-
+import * as crypto from 'crypto-js';
+import { App, AppVerification, SupportPlatform } from 'src/interface/app.interface';
 import { AppLogger } from '../services/logger.service';
 
 export const isDefault = (envType: any[]) => {
@@ -21,4 +22,25 @@ export const isEnv = (envList: any): boolean[] => {
 
     return error_array;
 
+}
+
+export const Generate16BitsKeys = (appVerify: App) => {
+    let secret: string = crypto.lib.WordArray.random(128/16).toString(crypto.enc.Hex);
+    let jwtSecret: string = crypto.lib.WordArray.random(512/8).toString(crypto.enc.Hex);
+    let appKeyData: AppVerification = {
+        env: appVerify.env,
+        version: appVerify.version,
+        platform: SupportPlatform.Web
+    }
+
+    secret = secret.toUpperCase();
+    jwtSecret = jwtSecret.toUpperCase();
+
+    let appKey = crypto.AES.encrypt(JSON.stringify(appKeyData),secret).toString();
+
+    return {
+        jwtSecret: jwtSecret,
+        secret: secret,
+        appKey: appKey
+    };
 }

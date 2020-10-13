@@ -15,17 +15,23 @@ export enum AppType {
     OTHER = 7,
 }
 
+export enum SupportPlatform {
+    Web, Android, IOS, Desktop, Portal,
+}
+
 export interface App {
     env: AppEnv,
     prefix: string;
     baseUrl: string;
     port: number;
     version: string;
-    secret: string;
-    accept_secret_key: string;
+    jwtSecret: string;
+    appKey: string;
 }
 
 export interface AppVerification {
     env: AppEnv,
     version: string;
+    platform?: SupportPlatform;
 }
+

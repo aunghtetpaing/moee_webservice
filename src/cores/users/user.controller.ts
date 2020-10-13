@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Param, Query, Delete, Put, BadRequestException, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Param, Query, Delete, Put, HttpStatus, Res, BadRequestException, NotFoundException} from '@nestjs/common';
 
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -12,7 +12,9 @@ import { CreateUserDto, userFilterDto, DeleteUserDto, UpdateUserDto } from '../.
 import { hasRoles } from '../../dtos/roles.dto';
 
 import { UserService } from './user.service';
-import { BadRequestResponse, SuccessResponse } from 'src/interface/response.interface';
+import { BadRequestResponse, HttpResponseInterface, SuccessResponse } from 'src/interface/response.interface';
+import { request, Response } from 'express';
+import { HttpResponseService } from 'src/services/http.response.service';
 
 @Controller('users')
 export class UserController {
@@ -24,17 +26,23 @@ export class UserController {
     description: false
   }
 
+  httpResponse: HttpResponseInterface = {
+    responseCode: HttpStatus.OK,
+    errorCode: false,
+    description: false
+  }
+
   constructor(
-    private readonly userService: UserService
+    private readonly userService: UserService,
+    private httpResService: HttpResponseService,
   ) { }
 
 @Post()
-async createUser(@Body() requestUser: CreateUserDto): Promise<SuccessResponse> {
-  
+async createUser(@Body() requestUser: CreateUserDto, @Res() res: Response): Promise<any> {
+
   if(!Number(requestUser.phoneNumber)) {
-    this.badResponse.description = 'incorrect phone number format';
-    this.badResponse.errorCode = 'ddd';
-    throw new BadRequestException(this.badResponse)
+    const responseObject: HttpResponseInterface = await this.httpResService.setResponseObject(HttpStatus.BAD_REQUEST, 'USRINFO001', null, requestUser);
+   return res.status(HttpStatus.BAD_REQUEST).json(responseObject);
   }
   // const getUser: UserEntity = await this.userService.create(requestUser);
 
@@ -44,7 +52,6 @@ async createUser(@Body() requestUser: CreateUserDto): Promise<SuccessResponse> {
   // }
 
   // return httpResponseException('055','services not found');
-  return;
 }
 
 // @UseGuards(JwtAuthGuard, RolesGuard)

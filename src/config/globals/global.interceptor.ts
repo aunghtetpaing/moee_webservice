@@ -1,8 +1,6 @@
 import * as crypto from 'crypto-js';
 
 import { CallHandler, ExecutionContext, HttpStatus, Injectable, NestInterceptor } from "@nestjs/common";
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
 
 import { AppLogger } from "src/services/logger.service";
 import { AppConfig } from "../app.config";
@@ -11,92 +9,97 @@ import { app_level } from "../error.message";
 import { AppVerification } from "src/interface/app.interface";
 import { UnprocessableRequestResponse } from "src/interface/response.interface";
 
-export enum ProcessStatus {
-    PASS = 0,
-    TOKEN_EMPTY = 1,
-    LANG_EMPTY = 2,
-    TOKEN_INVALID = 3,
-}
-
 @Injectable()
-export class GlobalLoggerInterceptor implements NestInterceptor {
+export class GlobalInterceptor implements NestInterceptor {
 
+    request: any;
+    headers: any;
+    response: any;
     responseObject: UnprocessableRequestResponse = {
         responseCode: HttpStatus.UNPROCESSABLE_ENTITY,
         errorCode: false,
         description: false,
     };
-
     decrypted: AppVerification;
-    invalidToken: boolean = false;
-    process: ProcessStatus = ProcessStatus.PASS;
     
     constructor(
         private readonly logger: AppLogger
     ) { }
 
-    intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    private async setResponseObject(errorCode: string, header?: any) {
+        this.responseObject.errorCode = await app_level[errorCode].code;
+        this.responseObject.description = await app_level[errorCode].message;
+        this.responseObject.header = await header;
+        this.logger.error(app_level[errorCode].message, app_level[errorCode].code);
+        return false;
+    }
 
-        const request = context.switchToHttp().getRequest<Request>();
-        const header: any = context.switchToHttp().getRequest<Request>().headers;
-        const response: any = context.switchToHttp().getResponse<Response>();
-
-        if(!header.token) {
-            this.responseObject.errorCode = app_level.APPAUTH001.code;
-            this.responseObject.description = app_level.APPAUTH001.message;
-            this.responseObject.header = {
-                Token: null
-            }
-            this.logger.error(app_level.APPAUTH001.message, app_level.APPAUTH001.code);
-            this.process = ProcessStatus.TOKEN_EMPTY;
+    private async tokenValidation(token: any): Promise<boolean>{
+        if(token.sigBytes === 36) {
+            this.decrypted = JSON.parse(token.toString(crypto.enc.Utf8));
+            return true;
+        } else {
+            await this.setResponseObject('APPAUTH002', {
+                Token: this.headers.token
+            });
+            return false;
         }
+    }
 
-        if(!header.language){
-            this.responseObject.errorCode = app_level.APPLANG001.code;
-            this.responseObject.description = app_level.APPLANG001.message;
-            this.responseObject.header = {
-                Language: null
-            }
-            this.logger.error(app_level.APPLANG001.message, app_level.APPLANG001.code);
-            this.process = ProcessStatus.LANG_EMPTY;
+    private async nextCallHandler(status: boolean): Promise<boolean> {
+        if(status) {
+            this.logger.log(`Successfully request to '${this.request.url}'`,'HTTP-Request');
+            return true;
+        } else {
+            await this.response.status(HttpStatus.UNPROCESSABLE_ENTITY).json(this.responseObject);
+            return false;
         }
+    }
 
-        if(this.process === ProcessStatus.PASS) {
-            const token = crypto.AES.decrypt(header.token, AppConfig.accept_secret_key);
-            token.sigBytes !== 32 ? 
-            this.process = ProcessStatus.TOKEN_INVALID :
-            this.decrypted = JSON.parse(token.toString(crypto.enc.Utf8))
-        }
+    async intercept(context: ExecutionContext, next: CallHandler): Promise<any> {
 
-        if(this.process === ProcessStatus.TOKEN_INVALID) {
-            this.responseObject.errorCode = app_level.APPAUTH002.code;
-            this.responseObject.description = app_level.APPAUTH002.message;
-            this.responseObject.header = {
-                header: header.token
-            }
-            this.logger.error(app_level.APPAUTH002.message, app_level.APPAUTH002.code);
-        }
+        this.request = context.switchToHttp().getRequest<Request>();
+        this.headers = context.switchToHttp().getRequest<Request>().headers;
+        this.response = context.switchToHttp().getResponse<Response>();
 
-        if((this.process === ProcessStatus.PASS) && (this.decrypted.env !== AppConfig.env || this.decrypted.version !== AppConfig.version)) {
-            this.responseObject.errorCode = app_level.APPSUPPORT001.code,
-            this.responseObject.description = app_level.APPSUPPORT001.message;
-            this.responseObject.header = {
-                Token : header.token,
-                ...this.decrypted
-            }
-            this.logger.error(app_level.APPSUPPORT001.message, app_level.APPSUPPORT001.code);
-        }
+        let isToken: boolean = false;
+        let status: boolean = true;
+        let isNext: boolean = false;
 
-        return next.handle()
-        .pipe(
-            tap(() => {
-                if(this.process !== ProcessStatus.PASS) {
-                    return response.status(HttpStatus.UNPROCESSABLE_ENTITY).json(this.responseObject);
-                } else {
-                    this.logger.log(`Successfully request to '${request.url}'`,'HTTP-Request')
-                }
+        if(!this.headers.token) {
+            status = await this.setResponseObject('APPAUTH001', { 
+                Token: null 
             })
-        )
+        }
 
+        if(!this.headers.language){
+            status = await this.setResponseObject('APPLANG001', { 
+                Language: null 
+            });
+        }
+
+        if(status){
+            const token = crypto.AES.decrypt(this.headers.token, AppConfig.appKey);
+            isToken = await this.tokenValidation(token);
+            status = isToken;
+        }
+
+        if(isToken && this.decrypted.env !== AppConfig.env) {
+            status = await this.setResponseObject('APPSUPPORT003', {
+                environment: this.decrypted.env
+            })
+        }
+
+        if(isToken && this.decrypted.version !== AppConfig.version) {
+            status = await this.setResponseObject('APPSUPPORT001', {
+                environment: this.decrypted.version
+            })
+        }
+
+        isNext = await this.nextCallHandler(status);
+        
+        if(isNext) {
+            return next.handle()
+        }
     }
 }

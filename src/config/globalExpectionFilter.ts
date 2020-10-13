@@ -24,7 +24,7 @@ export class GlobalExpectionFilter implements ExceptionFilter {
 
     if(status === 404) {
       this.pageNotFoundResponse.url= request.url;
-      return response.status(HttpStatus.OK).json(this.pageNotFoundResponse);
+      return response.status(HttpStatus.NOT_FOUND).json(this.pageNotFoundResponse);
     }
 
   }
